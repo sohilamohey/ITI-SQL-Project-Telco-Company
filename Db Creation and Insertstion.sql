@@ -14,7 +14,6 @@ CREATE TABLE Demographics (
     Zip_Code INT NOT NULL
 );
 ----------------------------------
-
 -----------------------------------
 --Rules on Demographocs table------
 
@@ -27,8 +26,7 @@ create rule Married
 as @married IN ('Yes', 'No')
 
 sp_bindrule Married, '[dbo].[Demographics].[Married]'
------------------------------------
-
+------------------------------------------------
 ------------------------------------------------
 ------ Create the INSTEAD OF DELETE trigger----
 CREATE or alter TRIGGER PreventDeleteFromDemographics
@@ -42,6 +40,17 @@ END;
 ---Try to PreventDelete 
 delete from Demographics 
 where CustomerID = 1
+-----------------Trigger for update in Zip_Code----------------------------
+CREATE OR ALTER TRIGGER AfterUpdateDemographics
+ON [dbo].[Demographics]
+AFTER UPDATE
+AS
+BEGIN
+    IF UPDATE(Zip_Code)
+    BEGIN
+        SELECT 'Location updated successfully, using Zip_Code column by ' + SUSER_NAME() AS Announcement;
+    END
+END;
 ------------------------------------
 INSERT INTO Demographics (Gender, Age, Married, Number_of_Dependents, Zip_Code)
 VALUES   ('Male', 20, 'Yes', 1, 100),
@@ -75,10 +84,9 @@ VALUES   ('Male', 20, 'Yes', 1, 100),
 	('Female', 36, 'Yes', 1, 104),
 	('Female', 20, 'No', 8, 102);
 
-----
+---------------Check added data---------------------------
 select * from Demographics 
 -----------------------------------------------------------
-
 -----------------------------------------------------------
 CREATE TABLE Location (
     Zip_Code int PRIMARY KEY,
@@ -86,7 +94,7 @@ CREATE TABLE Location (
     State VARCHAR(50),
     City VARCHAR(50)
 );
-
+-------------------------------------------------------------
 INSERT INTO Location (Zip_Code, Country, State, City)
 VALUES
     ('100', 'USA', 'California', 'Los Angeles'),
@@ -98,7 +106,7 @@ VALUES
     ('106', 'Japan', 'Tokyo', 'Tokyo'),
     ('107', 'Australia', 'New South Wales', 'Tokyo');  
 
--- Verify the data
+-- Verify the data-----------------------------------
 SELECT * FROM Location;
 --------------------------------------------------------
 ------ Create the INSTEAD OF DELETE trigger from ----
@@ -110,7 +118,7 @@ BEGIN
    SELECT 'Delete operation is not allowed for table Location to user ' + SUSER_NAME() AS Announcement;
 END;
 
----Try to PreventDelete 
+---------------------Try to PreventDelete----------------------- 
 delete from Location 
 where Zip_Code = 100
 ---------------------------------------------------------
@@ -149,7 +157,7 @@ BEGIN
    SELECT 'Delete operation is not allowed for table Location to user ' + SUSER_NAME() + ' Just insert is allowed' AS Announcement;
 END;
 
---
+------------------------------------------------------
 ---Try to PreventDelete 
 delete from Service 
 where CustomerID = 2
@@ -170,10 +178,6 @@ ALTER TABLE Demographics
 ADD CONSTRAINT FK_Demographics_Location
 FOREIGN KEY (Zip_Code) REFERENCES Location(Zip_Code);
 --------------------------------------------------------------
-
-
-
-
 --------------------------------------------------------------
 
 INSERT INTO Service (CustomerID, Quar, Tenure_in_Months, Offer, Phone_Service, Internet_Service, 
@@ -212,10 +216,7 @@ VALUES
     (30, 4, 18, 'A', 'Yes', 'Cable', 'Yes', 'No', 'No', 150, 'One_Year', 'Mailed_Check', 70.0)
    ;
 
--- Verify the data
-select distinct(CustomerID) from Service
-
--- Verify the data
+------------------------Verify the data---------------------
 select * from Service
 -------------------------------------------------------------
 CREATE TABLE Status (
@@ -231,9 +232,6 @@ CREATE TABLE Status (
     constraint ChurnCategory CHECK (Churn_Category IN ('Attitude', 'Competitor', 'Dissatisfaction', 'Other', 'Price')),
     constraint Satisfaction_Score CHECK (Satisfaction_Score >= 1 AND Satisfaction_Score <= 5)
 );
---------------------------Rules----------------------------------
-
-
 ------------------------------------------------------------------
 
 INSERT INTO Status (CustomerID, Quar, Satisfaction_Score, Customer_Status, Churn_Category)
@@ -268,10 +266,11 @@ VALUES
     (28, 2, 5, 'Stayed', 'Other'),
     (29, 2, 2, 'Churned', 'Dissatisfaction'),
     (30, 2, 4, 'Stayed', 'Price');
-
+------------------------------
+-----Verify the data
 SELECT * FROM Status
 -------------------------------------------------------------
---------------------------Validate all data Together----------
+--------------------Validate all data Together---------------
 select d.*, c.*,s.*,st.* from  Demographics d
 join Location c 
 on  c.Zip_Code = d.Zip_Code
